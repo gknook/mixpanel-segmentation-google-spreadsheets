@@ -95,13 +95,15 @@ var API_PARAMETERS_IHT = {
  * Fetch the data
  **********************************************************************************/
 
-// Iterates through the hash map of queries, gets the data, writes it to spreadsheet
+// Iterates through the hash map of queries, gets the data, writes it to spreadsheet.
 function getMixpanelDataAHT() {
   for (var i in API_PARAMETERS_AHT)
   {
     fetchMixpanelData(i, "AHT");
   }
 }
+
+// One function per app. Added the app parameter to indicate which app the function should work for.
 
 function getMixpanelDataWHT() {
   for (var i in API_PARAMETERS_WHT)
@@ -218,8 +220,8 @@ function insertSheet(sheetName, values) {
  * Returns an array of query parameters
  */
 function getApiParameters(expires, sheetName, app) {
-  Logger.log(app);
-  if (app == "AHT") { 
+  //Logger.log(app); // Log which app is being called
+  if (app == "AHT") { // Figure out which API_KEY to use, so that the right project is called. As well as which parameters to use.
     API_KEY = API_KEY_AHT;
     API_PARAMETERS = API_PARAMETERS_AHT;
   }
@@ -279,7 +281,7 @@ function getApiExpirationTime() {
  */
 function getApiSignature(expires, sheetName, app) {
   var parameters = getApiParameters(expires, sheetName);
-  if (app == "AHT") { 
+  if (app == "AHT") { // Same as for the API keys.
     API_SECRET = API_SECRET_AHT;
   }
   else if (app == "WHT") {
