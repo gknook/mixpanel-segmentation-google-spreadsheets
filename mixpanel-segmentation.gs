@@ -10,12 +10,18 @@
  * https://mixpanel.com/docs/api-documentation/exporting-raw-data-you-inserted-into-mixpanel
  *
  *********************************************************************************/
+var API_KEY_IHT = 'app1Key';
+var API_KEY_AHT = 'app2Key';
+var API_KEY_WHT = 'app3Key';
+var API_SECRET_IHT = 'app1Secret';
+var API_SECRET_AHT = 'app2Secret';
+var API_SECRET_WHT = 'app3Secret';
 
 /**
  * Step 1) Fill in your account's Mixpanel Information here
  */
-var API_KEY = '';
-var API_SECRET = '';
+var API_KEY = "";
+var API_SECRET = "";
 
 /**
  * Step 2) Define the tab # at which to create new sheets in the spreadsheet.
@@ -30,7 +36,7 @@ var CREATE_NEW_SHEETS_AT = 1;
  * Today's Date: set equal to getMixpanelDateToday() 
  * Yesterday's Date: set equal to getMixpanelDateYesterday() 
  */
-var FROM_DATE = '2013-09-13';
+var FROM_DATE = '2017-02-20'; //launch week of iHT 4.0
 var TO_DATE = getMixpanelDateYesterday();
 
 /**
@@ -47,18 +53,28 @@ var TO_DATE = getMixpanelDateYesterday();
  * type - This can be 'general', 'unique', or 'average'.
  * unit - This can be 'minute', 'hour', 'day', or 'month'.
  */
-var API_PARAMETERS = {
-    'Sheet 1' : [ 'event', 'where', 'type', 'unit' ],
-    'Sheet 2' :  [ 'event', 'where', 'type', 'unit' ],
+var API_PARAMETERS_AHT = {
+    'AHT start' : [ 'AHT Adjust signal', '', 'general', 'week' ],
+    'AHT finished' :  [ 'AHT Finished hearing test', '', 'general', 'week' ],
+};
+
+var API_PARAMETERS_WHT = {
+    'WHT start' : [ 'WHT Adjust signal', '', 'general', 'week' ],
+    'WHT finished' :  [ 'WHT Finished hearing test', '', 'general', 'week' ],
+};
+
+var API_PARAMETERS_IHT = {
+    'IHT start' : [ 'HT_Initiate Test', '', 'general', 'week' ],
+    'IHT finished' :  [ 'HT_Finish Test', '', 'general', 'week' ],
 };
 
 /**
  * Step 5) Get Data
  *
- * In the Script Editor's "Run" menu, use the getMixpanelData() function to get data from within this script.
+ * In the Script Editor's "Run" menu, use the getMixpanelDataAHT() function to get data from within this script.
  *
  * Automate data pulling in the Script Editor's "Resources" menu. Select "Current Project Triggers"
- * and set up the script to run 'getMixpanelData' as a Time-driven event on a timer set by you.
+ * and set up the script to run 'getMixpanelDataAHT' as a Time-driven event on a timer set by you.
  *
  * In the spreadsheet, once this script is set up you will see a new menu called "Mixpanel".
  * Select "Get Mixpanel Data" to pull data on demand.
@@ -80,20 +96,25 @@ var API_PARAMETERS = {
  **********************************************************************************/
 
 // Iterates through the hash map of queries, gets the data, writes it to spreadsheet
-function getMixpanelData() {
-  for (var i in API_PARAMETERS)
+function getMixpanelDataAHT() {
+  for (var i in API_PARAMETERS_AHT)
   {
-    fetchMixpanelData(i);
+    fetchMixpanelData(i, "AHT");
   }
 }
 
-// Creates a menu in spreadsheet for easy user access to above function
-function onOpen() {
-  var activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  activeSpreadsheet.addMenu(
-      "Mixpanel", [{
-        name: "Get Mixpanel Data", functionName: "getMixpanelData"
-      }]);
+function getMixpanelDataWHT() {
+  for (var i in API_PARAMETERS_WHT)
+  {
+    fetchMixpanelData(i, "WHT");
+  }
+}
+
+function getMixpanelDataIHT() {
+  for (var i in API_PARAMETERS_IHT)
+  {
+    fetchMixpanelData(i, "IHT");
+  }
 }
 
 /**
@@ -101,11 +122,11 @@ function onOpen() {
  *
  * Working with JSON https://developers.google.com/apps-script/external_apis?hl=en
  */
-function fetchMixpanelData(sheetName) {
+function fetchMixpanelData(sheetName, app) {
 
   var expires = getApiExpirationTime();
-  var urlParams = getApiParameters(expires, sheetName).join('&')
-       + "&sig=" + getApiSignature(expires, sheetName);
+  var urlParams = getApiParameters(expires, sheetName, app).join('&')
+       + "&sig=" + getApiSignature(expires, sheetName, app);
   
   // Add URL Encoding for special characters which might generate 'Invalid argument' errors. 
   // Modulus should always be encoded first due to the % sign.
@@ -144,7 +165,7 @@ function fetchMixpanelData(sheetName) {
 
 /**
  * Creates a sheet and sets the name and index
- * insertSheet	https://developers.google.com/apps-script/reference/spreadsheet/spreadsheet#insertSheet(String,Integer)
+ * insertSheet  https://developers.google.com/apps-script/reference/spreadsheet/spreadsheet#insertSheet(String,Integer)
  * feed it a two dimensional array of values
  * getRange(row, column, numRows, numColumns) https://developers.google.com/apps-script/reference/spreadsheet/sheet#getRange(Integer,Integer,Integer,Integer)
  * setValues(values) https://developers.google.com/apps-script/reference/spreadsheet/range#setValue(Object)
@@ -185,7 +206,24 @@ function insertSheet(sheetName, values) {
 /** 
  * Returns an array of query parameters
  */
-function getApiParameters(expires, sheetName) {
+function getApiParameters(expires, sheetName, app) {
+  Logger.log(app);
+  if (app == "AHT") { 
+    API_KEY = API_KEY_AHT;
+    API_PARAMETERS = API_PARAMETERS_AHT;
+  }
+  else if (app == "WHT") {
+    API_KEY = API_KEY_WHT;
+    API_PARAMETERS = API_PARAMETERS_WHT;
+  }
+  else if (app == "IHT") {
+    API_KEY = API_KEY_IHT;
+    API_PARAMETERS = API_PARAMETERS_IHT;
+  }
+  else {
+    Logger.log("App key not defined");
+  }
+  
   var parametersEntry = API_PARAMETERS[sheetName];
   return [
         'api_key=' + API_KEY,
@@ -228,8 +266,20 @@ function getApiExpirationTime() {
 /** 
  * Returns API Signature calculated using api_secret. 
  */
-function getApiSignature(expires, sheetName) {
+function getApiSignature(expires, sheetName, app) {
   var parameters = getApiParameters(expires, sheetName);
+  if (app == "AHT") { 
+    API_SECRET = API_SECRET_AHT;
+  }
+  else if (app == "WHT") {
+    API_SECRET = API_SECRET_WHT;
+  }
+  else if (app == "IHT") {
+    API_SECRET = API_SECRET_IHT;
+  }
+  else {
+    logger.log("App secret not defined");
+  }
   var sortedParameters = sortApiParameters(parameters).join('') + API_SECRET;
   // Logger.log("Sorted Parameters  " + sortedParameters);
   
