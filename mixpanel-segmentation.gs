@@ -117,6 +117,17 @@ function getMixpanelDataIHT() {
   }
 }
 
+// Creates a menu in spreadsheet for easy user access to above function
+function onOpen() {
+   var ss = SpreadsheetApp.getActiveSpreadsheet();
+   var menuEntries = [];
+   menuEntries.push({name: "Get IHT data", functionName: "getMixpanelDataIHT"});
+   menuEntries.push({name: "Get AHT data", functionName: "getMixpanelDataAHT"});
+   menuEntries.push({name: "Get WHT data", functionName: "getMixpanelDataWHT"});
+
+   ss.addMenu("Mixpanel", menuEntries);
+ }
+
 /**
  * Gets data from mixpanel api and inserts to spreadsheet
  *
